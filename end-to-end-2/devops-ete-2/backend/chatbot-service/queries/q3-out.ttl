@@ -1,3 +1,0 @@
-(rdflib.term.Literal('Income'), rdflib.term.URIRef('http://dbpedia.org/resource/Income'))
-(rdflib.term.Literal('Canada'), rdflib.term.URIRef('http://dbpedia.org/resource/Canada'))
-(rdflib.term.Literal('Taxation'), rdflib.term.URIRef('http://dbpedia.org/resource/Tax'))
