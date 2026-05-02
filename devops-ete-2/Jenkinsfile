@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_USERNAME = credentials('dockerhub-username')
+        DOCKERHUB_TOKEN = credentials('dockerhub-token')
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Ashmit-Tyagi/devops-ete.git'
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                sh '''
+                echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
+                '''
+            }
+        }
+
+        stage('Build & Push Images') {
+            parallel {
+
+                stage('chatbot-service') {
+                    steps {
+                        sh '''
+                        docker build -t $DOCKERHUB_USERNAME/chatbot-service:latest ./backend/chatbot-service
+                        docker push $DOCKERHUB_USERNAME/chatbot-service:latest
+                        '''
+                    }
+                }
+
+                stage('auth-service') {
+                    steps {
+                        sh '''
+                        docker build -t $DOCKERHUB_USERNAME/auth-service:latest ./backend/auth-service
+                        docker push $DOCKERHUB_USERNAME/auth-service:latest
+                        '''
+                    }
+                }
+
+                stage('gateway') {
+                    steps {
+                        sh '''
+                        docker build -t $DOCKERHUB_USERNAME/gateway:latest ./backend/gateway
+                        docker push $DOCKERHUB_USERNAME/gateway:latest
+                        '''
+                    }
+                }
+
+                stage('frontend') {
+                    steps {
+                        sh '''
+                        docker build -t $DOCKERHUB_USERNAME/frontend:latest ./frontend/university-chat-ui
+                        docker push $DOCKERHUB_USERNAME/frontend:latest
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                kubectl apply -f k8s/
+                kubectl get pods -n university-chatbot
+                kubectl get svc -n university-chatbot
+                '''
+            }
+        }
+    }
+}
